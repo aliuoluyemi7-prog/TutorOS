@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard — Tutor OS</title>
-<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="/app.css" />
 </head>
 <body>
 <div class="page">
@@ -49,11 +49,11 @@
 <div id="toast" class="toast"></div>
 
 <script type="module">
-  import { requireAuth } from './router-guard.js';
-  import { signOut } from './auth.js';
-  import { resolveWorkspace, getCurrentBusinessId } from './workspace.js';
-  import { getBusiness, getMyRoleInBusiness } from './business.js';
-  import { showToast, friendlyError } from './ui-helpers.js';
+  import { requireAuth } from '/router-guard.js';
+  import { signOut } from '/auth.js';
+  import { resolveWorkspace, getCurrentBusinessId } from '/workspace.js';
+  import { getBusiness, getMyRoleInBusiness } from '/business.js';
+  import { showToast, friendlyError } from '/ui-helpers.js';
 
   await requireAuth();
 
@@ -64,11 +64,11 @@
   try {
     const result = await resolveWorkspace();
     if (result.action === 'onboarding') {
-      window.location.replace('business-setup.html');
+      window.location.replace('/business-setup.html');
       throw new Error('redirecting');
     }
     if (result.action === 'choose-workspace') {
-      window.location.replace('choose-workspace.html');
+      window.location.replace('/choose-workspace.html');
       throw new Error('redirecting');
     }
     businessId = result.businessId;
@@ -94,7 +94,7 @@
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
     await signOut();
-    window.location.href = 'login.html';
+    window.location.href = '/login.html';
   });
 
   function renderEmptyState(role) {
@@ -110,11 +110,19 @@
 
   function renderQuickActions(role) {
     const container = document.getElementById('quick-actions');
+    // href: null means "not wired up yet" (later phase)
     const staffActions = [
-      'Add Student', 'Add Parent', 'Add Tutor',
-      'Schedule Session', 'Create Invoice', 'Record Payment',
+      { label: 'Add Student', href: '/students.html' },
+      { label: 'Add Parent', href: null },
+      { label: 'Add Tutor', href: null },
+      { label: 'Schedule Session', href: null },
+      { label: 'Create Invoice', href: null },
+      { label: 'Record Payment', href: null },
     ];
-    const tutorActions = ['Schedule Session', 'Add Session Note'];
+    const tutorActions = [
+      { label: 'Schedule Session', href: null },
+      { label: 'Add Session Note', href: null },
+    ];
     const parentActions = [];
 
     const actions = role === 'tutor' ? tutorActions
@@ -123,12 +131,16 @@
 
     if (actions.length === 0) return;
 
-    actions.forEach((label) => {
+    actions.forEach(({ label, href }) => {
       const btn = document.createElement('button');
       btn.className = 'quick-action-btn';
       btn.textContent = label;
-      btn.disabled = true; // Phase 2+ wires these up to real screens
-      btn.title = 'Coming in a later phase';
+      if (href) {
+        btn.addEventListener('click', () => { window.location.href = href; });
+      } else {
+        btn.disabled = true;
+        btn.title = 'Coming in a later phase';
+      }
       container.appendChild(btn);
     });
   }
