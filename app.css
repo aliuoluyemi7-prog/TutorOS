@@ -358,6 +358,37 @@ button {
   padding: var(--spacing-3);
 }
 
+.list-item-actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-shrink: 0;
+}
+
+.btn-inline {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-inline--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.list-item-edit-input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+}
+
 .list-item-main {
   min-width: 0;
 }
