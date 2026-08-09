@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard — Tutor OS</title>
-<link rel="stylesheet" href="/app.css" />
+<link rel="stylesheet" href="app.css" />
 </head>
 <body>
 <div class="page">
@@ -49,11 +49,11 @@
 <div id="toast" class="toast"></div>
 
 <script type="module">
-  import { requireAuth } from '/router-guard.js';
-  import { signOut } from '/auth.js';
-  import { resolveWorkspace, getCurrentBusinessId } from '/workspace.js';
-  import { getBusiness, getMyRoleInBusiness } from '/business.js';
-  import { showToast, friendlyError } from '/ui-helpers.js';
+  import { requireAuth } from './router-guard.js';
+  import { signOut } from './auth.js';
+  import { resolveWorkspace, getCurrentBusinessId } from './workspace.js';
+  import { getBusiness, getMyRoleInBusiness } from './business.js';
+  import { showToast, friendlyError } from './ui-helpers.js';
 
   await requireAuth();
 
@@ -64,11 +64,11 @@
   try {
     const result = await resolveWorkspace();
     if (result.action === 'onboarding') {
-      window.location.replace('/business-setup.html');
+      window.location.replace('business-setup.html');
       throw new Error('redirecting');
     }
     if (result.action === 'choose-workspace') {
-      window.location.replace('/choose-workspace.html');
+      window.location.replace('choose-workspace.html');
       throw new Error('redirecting');
     }
     businessId = result.businessId;
@@ -94,7 +94,7 @@
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
     await signOut();
-    window.location.href = '/login.html';
+    window.location.href = 'login.html';
   });
 
   function renderEmptyState(role) {

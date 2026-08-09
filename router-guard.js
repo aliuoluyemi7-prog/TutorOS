@@ -11,7 +11,7 @@ import { getSession } from './auth.js';
 export async function requireAuth() {
   const { data, error } = await getSession();
   if (error || !data.session) {
-    window.location.replace('/login.html');
+    window.location.replace('login.html');
     return null;
   }
   return data.session;
