@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Choose a workspace — Tutor OS</title>
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<div class="center-screen">
+  <div class="card">
+    <h1>Choose a workspace</h1>
+    <p class="subtitle">You belong to more than one business. Pick one to continue.</p>
+    <div class="option-list" id="workspace-list">
+      <!-- populated by script -->
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { requireAuth } from '/router-guard.js';
+  import { resolveWorkspace, setCurrentBusinessId } from '/workspace.js';
+  import { showToast, friendlyError } from '/ui-helpers.js';
+
+  await requireAuth();
+
+  const list = document.getElementById('workspace-list');
+
+  try {
+    const result = await resolveWorkspace();
+
+    // If resolution no longer needs a choice (e.g. down to one business,
+    // or already has a valid stored selection), don't show this screen.
+    if (result.action === 'onboarding') {
+      window.location.replace('/business-setup.html');
+    } else if (result.action === 'enter') {
+      window.location.replace('/dashboard.html');
+    } else {
+      result.memberships.forEach((m) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'option-card';
+        btn.innerHTML = `
+          <div class="option-title">${escapeHtml(m.businesses.name)}</div>
+          <div class="option-sub">${escapeHtml(m.role)} · ${escapeHtml(formatType(m.businesses.business_type))}</div>
+        `;
+        btn.addEventListener('click', () => {
+          setCurrentBusinessId(m.business_id);
+          window.location.href = '/dashboard.html';
+        });
+        list.appendChild(btn);
+      });
+    }
+  } catch (error) {
+    showToast(friendlyError(error), 'danger');
+  }
+
+  function formatType(type) {
+    return { independent_tutor: 'Independent tutor', tutoring_centre: 'Tutoring centre', agency: 'Agency' }[type] || type;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

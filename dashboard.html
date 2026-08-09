@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — Tutor OS</title>
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<div class="page">
+  <header class="app-header">
+    <div>
+      <div class="business-name" id="business-name">Loading...</div>
+      <div class="role-badge" id="role-badge"></div>
+    </div>
+    <button class="logout-btn" id="logout-btn">Log out</button>
+  </header>
+
+  <main class="app-main">
+    <div class="dashboard-grid">
+      <div class="stat-card">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Today's sessions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Total students</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Outstanding invoices</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">—</div>
+        <div class="stat-label">Revenue this month</div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="empty-state">
+      Setting things up...
+    </div>
+
+    <h2 style="font-size:1rem; margin: 24px 0 12px;">Quick actions</h2>
+    <div class="quick-actions" id="quick-actions">
+      <!-- populated by script, role-dependent -->
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { requireAuth } from '/router-guard.js';
+  import { signOut } from '/auth.js';
+  import { resolveWorkspace, getCurrentBusinessId } from '/workspace.js';
+  import { getBusiness, getMyRoleInBusiness } from '/business.js';
+  import { showToast, friendlyError } from '/ui-helpers.js';
+
+  await requireAuth();
+
+  // Always re-resolve on direct load — covers refresh/deep-link cases
+  // where sessionStorage might not yet hold a valid business_id, and
+  // catches the "membership was revoked mid-session" case.
+  let businessId;
+  try {
+    const result = await resolveWorkspace();
+    if (result.action === 'onboarding') {
+      window.location.replace('/business-setup.html');
+      throw new Error('redirecting');
+    }
+    if (result.action === 'choose-workspace') {
+      window.location.replace('/choose-workspace.html');
+      throw new Error('redirecting');
+    }
+    businessId = result.businessId;
+  } catch (e) {
+    if (e.message !== 'redirecting') showToast(friendlyError(e), 'danger');
+    throw e;
+  }
+
+  const [{ business, error: bizError }, role] = await Promise.all([
+    getBusiness(businessId),
+    getMyRoleInBusiness(businessId),
+  ]);
+
+  if (bizError || !business) {
+    showToast('Could not load your business.', 'danger');
+  } else {
+    document.getElementById('business-name').textContent = business.name;
+  }
+  document.getElementById('role-badge').textContent = role || '';
+
+  renderEmptyState(role);
+  renderQuickActions(role);
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut();
+    window.location.href = '/login.html';
+  });
+
+  function renderEmptyState(role) {
+    const el = document.getElementById('empty-state');
+    const messages = {
+      owner: 'No students yet. Add your first tutor and student to get started.',
+      administrator: 'No students yet. Add your first tutor and student to get started.',
+      tutor: 'No students assigned to you yet.',
+      parent: 'No students linked to your account yet.',
+    };
+    el.textContent = messages[role] || 'Welcome to your dashboard.';
+  }
+
+  function renderQuickActions(role) {
+    const container = document.getElementById('quick-actions');
+    const staffActions = [
+      'Add Student', 'Add Parent', 'Add Tutor',
+      'Schedule Session', 'Create Invoice', 'Record Payment',
+    ];
+    const tutorActions = ['Schedule Session', 'Add Session Note'];
+    const parentActions = [];
+
+    const actions = role === 'tutor' ? tutorActions
+      : role === 'parent' ? parentActions
+      : staffActions;
+
+    if (actions.length === 0) return;
+
+    actions.forEach((label) => {
+      const btn = document.createElement('button');
+      btn.className = 'quick-action-btn';
+      btn.textContent = label;
+      btn.disabled = true; // Phase 2+ wires these up to real screens
+      btn.title = 'Coming in a later phase';
+      container.appendChild(btn);
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+/* app.css — single shared stylesheet, mobile-first, no framework */
+
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-bg: #f9fafb;
+  --color-surface: #ffffff;
+  --color-danger: #dc2626;
+  --color-success: #16a34a;
+  --radius: 10px;
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 16px;
+  --spacing-4: 24px;
+  --spacing-5: 32px;
+  --max-width: 480px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.center-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-3);
+}
+
+.card {
+  width: 100%;
+  max-width: var(--max-width);
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: var(--spacing-4);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.card h1 {
+  font-size: 1.4rem;
+  margin: 0 0 var(--spacing-1);
+}
+
+.card .subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--spacing-4);
+  font-size: 0.9rem;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-1);
+  margin-top: var(--spacing-3);
+}
+
+label:first-of-type { margin-top: 0; }
+
+input, select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.field-error {
+  color: var(--color-danger);
+  font-size: 0.8rem;
+  margin-top: var(--spacing-1);
+  min-height: 1em;
+}
+
+button {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: none;
+  padding: 13px 18px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  width: 100%;
+  background: var(--color-primary);
+  color: #fff;
+  margin-top: var(--spacing-4);
+}
+
+.btn-primary:hover { background: var(--color-primary-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-secondary {
+  width: 100%;
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  padding: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.link-row {
+  text-align: center;
+  margin-top: var(--spacing-4);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.step-indicator {
+  display: flex;
+  gap: var(--spacing-1);
+  margin-bottom: var(--spacing-3);
+}
+
+.step-indicator .dot {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+}
+
+.step-indicator .dot.active { background: var(--color-primary); }
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.option-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.option-card.selected {
+  border-color: var(--color-primary);
+  background: #eff6ff;
+}
+
+.option-card .option-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.option-card .option-sub {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+/* App shell */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-header .business-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.app-header .role-badge {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.app-main {
+  flex: 1;
+  padding: var(--spacing-3);
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+}
+
+.stat-card .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.empty-state {
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--spacing-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-3);
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-2);
+}
+
+.quick-action-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--spacing-3);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  max-width: 90%;
+  text-align: center;
+  transition: bottom 0.25s ease;
+  z-index: 100;
+}
+
+.toast--visible { bottom: 24px; }
+.toast--danger { background: var(--color-danger); }
+.toast--info { background: var(--color-text); }
+
+@media (min-width: 640px) {
+  .quick-actions { grid-template-columns: 1fr 1fr 1fr; }
+}

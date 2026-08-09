@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Set up your business — Tutor OS</title>
+<link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+<div class="center-screen">
+  <div class="card">
+    <div class="step-indicator">
+      <div class="dot active" id="dot-1"></div>
+      <div class="dot" id="dot-2"></div>
+    </div>
+
+    <!-- Step 1: business type -->
+    <div id="step-1">
+      <h1>What best describes you?</h1>
+      <p class="subtitle">This helps us set things up correctly.</p>
+      <div class="option-list">
+        <button type="button" class="option-card" data-type="independent_tutor">
+          <div class="option-title">Independent tutor</div>
+          <div class="option-sub">I manage my own students and parents</div>
+        </button>
+        <button type="button" class="option-card" data-type="tutoring_centre">
+          <div class="option-title">Tutoring centre</div>
+          <div class="option-sub">I manage multiple tutors and students</div>
+        </button>
+        <button type="button" class="option-card" data-type="agency">
+          <div class="option-title">Tutoring agency</div>
+          <div class="option-sub">Larger organisation managing tutors, students, and payments</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: business details -->
+    <form id="step-2" style="display:none;" novalidate>
+      <h1>Tell us about your business</h1>
+      <p class="subtitle">You can change these later in settings.</p>
+
+      <label for="business-name">Business name</label>
+      <input type="text" id="business-name" required />
+      <div class="field-error" id="name-error"></div>
+
+      <label for="country">Country</label>
+      <input type="text" id="country" placeholder="e.g. Nigeria" />
+
+      <label for="currency">Default currency</label>
+      <select id="currency">
+        <option value="NGN">NGN — Nigerian Naira</option>
+        <option value="USD">USD — US Dollar</option>
+        <option value="GBP">GBP — British Pound</option>
+        <option value="CAD">CAD — Canadian Dollar</option>
+        <option value="EUR">EUR — Euro</option>
+      </select>
+
+      <label for="timezone">Timezone</label>
+      <input type="text" id="timezone" value="Africa/Lagos" />
+
+      <button type="submit" class="btn-primary" id="submit-btn">Create my workspace</button>
+      <button type="button" class="btn-secondary" id="back-btn" style="margin-top:8px;">Back</button>
+    </form>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { requireAuth } from '/router-guard.js';
+  import { createBusiness } from '/business.js';
+  import { setCurrentBusinessId } from '/workspace.js';
+  import { showToast, withLoading, isNonEmpty, friendlyError } from '/ui-helpers.js';
+
+  await requireAuth();
+
+  const step1 = document.getElementById('step-1');
+  const step2 = document.getElementById('step-2');
+  const dot1 = document.getElementById('dot-1');
+  const dot2 = document.getElementById('dot-2');
+
+  let selectedType = null;
+
+  document.querySelectorAll('.option-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      selectedType = card.dataset.type;
+      step1.style.display = 'none';
+      step2.style.display = 'block';
+      dot1.classList.remove('active');
+      dot2.classList.add('active');
+    });
+  });
+
+  document.getElementById('back-btn').addEventListener('click', () => {
+    step2.style.display = 'none';
+    step1.style.display = 'block';
+    dot2.classList.remove('active');
+    dot1.classList.add('active');
+  });
+
+  document.getElementById('step-2').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('name-error').textContent = '';
+
+    const name = document.getElementById('business-name').value.trim();
+    const country = document.getElementById('country').value.trim();
+    const currency = document.getElementById('currency').value;
+    const timezone = document.getElementById('timezone').value.trim();
+
+    if (!isNonEmpty(name)) {
+      document.getElementById('name-error').textContent = 'Business name is required.';
+      return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    await withLoading(btn, 'Creating...', async () => {
+      const { businessId, error } = await createBusiness({
+        name,
+        businessType: selectedType,
+        country,
+        defaultCurrency: currency,
+        timezone,
+      });
+
+      if (error) {
+        showToast(friendlyError(error), 'danger');
+        return;
+      }
+
+      setCurrentBusinessId(businessId);
+      window.location.href = '/dashboard.html';
+    });
+  });
+</script>
+</body>
+</html>
