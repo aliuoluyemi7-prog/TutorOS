@@ -6,15 +6,15 @@
 
 const CACHE_NAME = 'tutoros-shell-v1';
 const SHELL_FILES = [
-  '/index.html',
-  '/manifest.json',
-  '/app.css',
-  '/supabase-client.js',
-  '/auth.js',
-  '/business.js',
-  '/workspace.js',
-  '/ui-helpers.js',
-  '/router-guard.js',
+  './index.html',
+  './manifest.json',
+  './app.css',
+  './supabase-client.js',
+  './auth.js',
+  './business.js',
+  './workspace.js',
+  './ui-helpers.js',
+  './router-guard.js',
 ];
 
 self.addEventListener('install', (event) => {
