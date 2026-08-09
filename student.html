@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Student — Tutor OS</title>
+<link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+<div class="page">
+  <header class="app-header">
+    <div>
+      <div class="business-name" id="business-name">Loading...</div>
+      <div class="role-badge" id="role-badge"></div>
+    </div>
+    <button class="logout-btn" id="logout-btn">Log out</button>
+  </header>
+
+  <main class="app-main">
+    <button class="back-link" id="back-link">&larr; Students</button>
+
+    <div id="not-found-state" class="empty-state" hidden>
+      Student not found, or you don\u2019t have access to it.
+    </div>
+
+    <div id="page-loading">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+
+    <div id="page-content" hidden>
+
+      <!-- ============ PROFILE HEADER ============ -->
+      <div class="card" id="profile-view">
+        <div class="page-title-row">
+          <h1 id="student-name">&nbsp;</h1>
+          <span class="status-badge" id="student-status-badge"></span>
+        </div>
+        <div class="list-item-sub" id="student-meta"></div>
+        <div class="form-actions" style="margin-top: var(--spacing-3);">
+          <button type="button" class="btn-inline" id="edit-profile-btn">Edit profile</button>
+        </div>
+      </div>
+
+      <form class="card inline-form-card" id="edit-profile-form" novalidate hidden>
+        <label for="edit-full-name">Full name</label>
+        <input type="text" id="edit-full-name" required autocomplete="off" />
+        <div class="field-error" id="edit-full-name-error"></div>
+
+        <label for="edit-school">School</label>
+        <input type="text" id="edit-school" autocomplete="off" />
+
+        <label for="edit-grade-year">Grade / year</label>
+        <input type="text" id="edit-grade-year" autocomplete="off" />
+
+        <label for="edit-curriculum">Curriculum</label>
+        <input type="text" id="edit-curriculum" autocomplete="off" />
+
+        <label for="edit-learning-goals">Learning goals</label>
+        <input type="text" id="edit-learning-goals" autocomplete="off" />
+
+        <label for="edit-status">Status</label>
+        <select id="edit-status" class="select-inline">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="graduated">Graduated</option>
+        </select>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="edit-profile-save-btn">Save changes</button>
+          <button type="button" class="btn-secondary" id="edit-profile-cancel-btn">Cancel</button>
+        </div>
+      </form>
+
+      <!-- ============ LINKED PARENTS ============ -->
+      <div class="section-row">
+        <h2>Parent(s) / Guardian(s)</h2>
+        <button type="button" class="btn-inline" id="add-guardian-btn">+ Add guardian</button>
+      </div>
+
+      <div id="guardian-duplicate-notice" class="notice-box" hidden>
+        <div id="guardian-duplicate-text"></div>
+        <div class="form-actions">
+          <button type="button" class="btn-primary" id="guardian-link-existing-btn">Link this parent</button>
+          <button type="button" class="btn-secondary" id="guardian-create-new-btn">Create new anyway</button>
+          <button type="button" class="btn-secondary" id="guardian-duplicate-cancel-btn">Cancel</button>
+        </div>
+      </div>
+
+      <form class="card inline-form-card" id="add-guardian-form" novalidate hidden>
+        <label for="guardian-name">Full name</label>
+        <input type="text" id="guardian-name" required autocomplete="off" />
+        <div class="field-error" id="guardian-name-error"></div>
+
+        <label for="guardian-phone">Phone number</label>
+        <input type="tel" id="guardian-phone" required autocomplete="off" />
+        <div class="field-error" id="guardian-phone-error"></div>
+
+        <label for="guardian-email">Email (optional)</label>
+        <input type="email" id="guardian-email" autocomplete="off" />
+        <div class="field-error" id="guardian-email-error"></div>
+
+        <label for="guardian-relationship">Relationship (optional)</label>
+        <input type="text" id="guardian-relationship" placeholder="e.g. Mother, Father, Guardian" autocomplete="off" />
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="guardian-save-btn">Save &amp; link</button>
+          <button type="button" class="btn-secondary" id="guardian-cancel-btn">Cancel</button>
+        </div>
+      </form>
+
+      <div class="empty-state" id="guardians-empty" hidden>No guardians linked yet.</div>
+      <div class="list-group" id="guardians-list"></div>
+
+      <!-- ============ SUBJECTS & TUTORS ============ -->
+      <div class="section-row">
+        <h2>Subjects &amp; Tutors</h2>
+        <button type="button" class="btn-inline" id="add-subject-btn">+ Add subject</button>
+      </div>
+
+      <div id="add-subject-picker" hidden>
+        <select id="subject-picker-select" class="select-inline"></select>
+        <div class="form-actions" style="margin-top: 0; margin-bottom: var(--spacing-3);">
+          <button type="button" class="btn-primary" id="subject-picker-confirm-btn">Add</button>
+          <button type="button" class="btn-secondary" id="subject-picker-cancel-btn">Cancel</button>
+        </div>
+      </div>
+
+      <div class="empty-state" id="subjects-empty" hidden>No subjects added yet.</div>
+      <div class="list-group" id="subjects-list"></div>
+
+      <!-- ============ TAB STRIP (scaffolded) ============ -->
+      <div class="tab-strip">
+        <button type="button" class="tab-btn tab-btn--active" disabled>Overview</button>
+        <button type="button" class="tab-btn" disabled title="Coming in Phase 3">Sessions</button>
+        <button type="button" class="tab-btn" disabled title="Coming in Phase 3">Attendance</button>
+        <button type="button" class="tab-btn" disabled title="Coming in Phase 3">Notes</button>
+        <button type="button" class="tab-btn" disabled title="Coming in Phase 4">Invoices</button>
+        <button type="button" class="tab-btn" disabled title="Coming in Phase 4">Payments</button>
+        <button type="button" class="tab-btn" disabled title="Coming in Phase 5/6">Progress</button>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { requireAuth } from './router-guard.js';
+  import { signOut } from './auth.js';
+  import { resolveWorkspace } from './workspace.js';
+  import { getBusiness, getMyRoleInBusiness } from './business.js';
+  import { showToast, withLoading, isNonEmpty, friendlyError } from './ui-helpers.js';
+  import { supabase } from './supabase-client.js';
+
+  await requireAuth();
+
+  const params = new URLSearchParams(window.location.search);
+  const studentId = params.get('id');
+
+  if (!studentId) {
+    window.location.replace('./students.html');
+    throw new Error('redirecting');
+  }
+
+  let businessId;
+  try {
+    const result = await resolveWorkspace();
+    if (result.action === 'onboarding') {
+      window.location.replace('./business-setup.html');
+      throw new Error('redirecting');
+    }
+    if (result.action === 'choose-workspace') {
+      window.location.replace('./choose-workspace.html');
+      throw new Error('redirecting');
+    }
+    businessId = result.businessId;
+  } catch (e) {
+    if (e.message !== 'redirecting') showToast(friendlyError(e), 'danger');
+    throw e;
+  }
+
+  const [{ business, error: bizError }, role] = await Promise.all([
+    getBusiness(businessId),
+    getMyRoleInBusiness(businessId),
+  ]);
+
+  if (bizError || !business) {
+    showToast('Could not load your business.', 'danger');
+  } else {
+    document.getElementById('business-name').textContent = business.name;
+  }
+  document.getElementById('role-badge').textContent = role || '';
+
+  document.getElementById('back-link').addEventListener('click', () => {
+    window.location.href = './students.html';
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut();
+    window.location.href = './login.html';
+  });
+
+  // ---------- state ----------
+  let student = null;
+  let guardians = [];       // student_parents rows joined with parents
+  let subjectLinks = [];    // student_subjects rows joined with subjects
+  let assignments = [];     // active tutor_students rows joined with tutors, per subject_id
+  let allActiveSubjects = []; // business's active subjects, for the add-subject picker
+  let allActiveTutors = [];   // business's active tutors, for the assign picker
+  let pendingGuardianData = null; // form values held while duplicate-check notice is showing
+
+  const pageLoadingEl = document.getElementById('page-loading');
+  const pageContentEl = document.getElementById('page-content');
+  const notFoundEl = document.getElementById('not-found-state');
+
+  await loadEverything();
+
+  async function loadEverything() {
+    pageLoadingEl.hidden = false;
+    pageContentEl.hidden = true;
+    notFoundEl.hidden = true;
+
+    const { data: studentData, error: studentError } = await supabase
+      .from('students')
+      .select('id, full_name, date_of_birth, gender, school, grade_year, curriculum, learning_goals, status, created_at')
+      .eq('id', studentId)
+      .eq('business_id', businessId)
+      .maybeSingle();
+
+    if (studentError) {
+      showToast(friendlyError(studentError), 'danger');
+      pageLoadingEl.hidden = true;
+      notFoundEl.hidden = false;
+      return;
+    }
+
+    if (!studentData) {
+      pageLoadingEl.hidden = true;
+      notFoundEl.hidden = false;
+      return;
+    }
+
+    student = studentData;
+
+    const [guardiansRes, subjectsRes, assignmentsRes, activeSubjectsRes, activeTutorsRes] = await Promise.all([
+      supabase
+        .from('student_parents')
+        .select('id, relationship, is_primary, parents(id, full_name, phone, email)')
+        .eq('student_id', studentId),
+      supabase
+        .from('student_subjects')
+        .select('id, subjects(id, name, active)')
+        .eq('student_id', studentId),
+      supabase
+        .from('tutor_students')
+        .select('id, subject_id, status, tutors(id, full_name)')
+        .eq('student_id', studentId)
+        .eq('status', 'active'),
+      supabase
+        .from('subjects')
+        .select('id, name')
+        .eq('business_id', businessId)
+        .eq('active', true)
+        .order('name', { ascending: true }),
+      supabase
+        .from('tutors')
+        .select('id, full_name')
+        .eq('business_id', businessId)
+        .eq('status', 'active')
+        .order('full_name', { ascending: true }),
+    ]);
+
+    if (guardiansRes.error) showToast(friendlyError(guardiansRes.error), 'danger');
+    if (subjectsRes.error) showToast(friendlyError(subjectsRes.error), 'danger');
+    if (assignmentsRes.error) showToast(friendlyError(assignmentsRes.error), 'danger');
+
+    guardians = guardiansRes.data || [];
+    subjectLinks = subjectsRes.data || [];
+    assignments = assignmentsRes.data || [];
+    allActiveSubjects = activeSubjectsRes.data || [];
+    allActiveTutors = activeTutorsRes.data || [];
+
+    pageLoadingEl.hidden = true;
+    pageContentEl.hidden = false;
+
+    renderProfile();
+    renderGuardians();
+    renderSubjects();
+  }
+
+  // ============ PROFILE ============
+  function renderProfile() {
+    document.getElementById('student-name').textContent = student.full_name;
+    const badge = document.getElementById('student-status-badge');
+    badge.className = `status-badge status-badge--${student.status}`;
+    badge.textContent = student.status;
+
+    const metaParts = [student.school, student.grade_year, student.curriculum].filter(Boolean);
+    document.getElementById('student-meta').textContent =
+      metaParts.length > 0 ? metaParts.join(' \u00b7 ') : 'No school/grade details on file';
+  }
+
+  document.getElementById('edit-profile-btn').addEventListener('click', () => {
+    document.getElementById('edit-full-name').value = student.full_name || '';
+    document.getElementById('edit-school').value = student.school || '';
+    document.getElementById('edit-grade-year').value = student.grade_year || '';
+    document.getElementById('edit-curriculum').value = student.curriculum || '';
+    document.getElementById('edit-learning-goals').value = student.learning_goals || '';
+    document.getElementById('edit-status').value = student.status;
+
+    document.getElementById('profile-view').hidden = true;
+    document.getElementById('edit-profile-form').hidden = false;
+  });
+
+  document.getElementById('edit-profile-cancel-btn').addEventListener('click', () => {
+    document.getElementById('edit-profile-form').hidden = true;
+    document.getElementById('profile-view').hidden = false;
+  });
+
+  document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('edit-full-name-error').textContent = '';
+
+    const fullName = document.getElementById('edit-full-name').value.trim();
+    if (!isNonEmpty(fullName)) {
+      document.getElementById('edit-full-name-error').textContent = 'Full name can\u2019t be empty.';
+      return;
+    }
+
+    const updates = {
+      full_name: fullName,
+      school: document.getElementById('edit-school').value.trim() || null,
+      grade_year: document.getElementById('edit-grade-year').value.trim() || null,
+      curriculum: document.getElementById('edit-curriculum').value.trim() || null,
+      learning_goals: document.getElementById('edit-learning-goals').value.trim() || null,
+      status: document.getElementById('edit-status').value,
+    };
+
+    const saveBtn = document.getElementById('edit-profile-save-btn');
+    await withLoading(saveBtn, 'Saving...', async () => {
+      const { data, error } = await supabase
+        .from('students')
+        .update(updates)
+        .eq('id', studentId)
+        .select('id, full_name, date_of_birth, gender, school, grade_year, curriculum, learning_goals, status, created_at')
+        .single();
+
+      if (error) {
+        showToast(friendlyError(error), 'danger');
+        return;
+      }
+
+      student = data;
+      renderProfile();
+      document.getElementById('edit-profile-form').hidden = true;
+      document.getElementById('profile-view').hidden = false;
+      showToast('Profile updated.', 'info');
+    });
+  });
+
+  // ============ GUARDIANS ============
+  function renderGuardians() {
+    const listEl = document.getElementById('guardians-list');
+    const emptyEl = document.getElementById('guardians-empty');
+    listEl.innerHTML = '';
+
+    if (guardians.length === 0) {
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+
+    guardians.forEach((g) => {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <div class="list-item-main">
+          <div class="list-item-title"></div>
+          <div class="list-item-sub"></div>
+        </div>
+      `;
+      const titleEl = item.querySelector('.list-item-title');
+      titleEl.textContent = g.parents ? g.parents.full_name : '(parent record missing)';
+      if (g.is_primary) {
+        const primaryTag = document.createElement('span');
+        primaryTag.className = 'primary-badge';
+        primaryTag.textContent = 'PRIMARY';
+        titleEl.appendChild(primaryTag);
+      }
+      const subParts = [g.relationship, g.parents && g.parents.phone].filter(Boolean);
+      item.querySelector('.list-item-sub').textContent = subParts.join(' \u00b7 ') || 'No contact details';
+      listEl.appendChild(item);
+    });
+  }
+
+  const addGuardianBtn = document.getElementById('add-guardian-btn');
+  const addGuardianForm = document.getElementById('add-guardian-form');
+  const duplicateNotice = document.getElementById('guardian-duplicate-notice');
+
+  addGuardianBtn.addEventListener('click', () => {
+    addGuardianForm.hidden = false;
+    addGuardianBtn.hidden = true;
+    document.getElementById('guardian-name').focus();
+  });
+
+  document.getElementById('guardian-cancel-btn').addEventListener('click', closeGuardianForm);
+
+  function closeGuardianForm() {
+    addGuardianForm.hidden = true;
+    duplicateNotice.hidden = true;
+    addGuardianBtn.hidden = false;
+    addGuardianForm.reset();
+    pendingGuardianData = null;
+    ['guardian-name-error', 'guardian-phone-error', 'guardian-email-error'].forEach(
+      (id) => (document.getElementById(id).textContent = '')
+    );
+  }
+
+  addGuardianForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    ['guardian-name-error', 'guardian-phone-error', 'guardian-email-error'].forEach(
+      (id) => (document.getElementById(id).textContent = '')
+    );
+
+    const fullName = document.getElementById('guardian-name').value.trim();
+    const phone = document.getElementById('guardian-phone').value.trim();
+    const email = document.getElementById('guardian-email').value.trim();
+    const relationship = document.getElementById('guardian-relationship').value.trim();
+
+    if (!isNonEmpty(fullName)) {
+      document.getElementById('guardian-name-error').textContent = 'Enter the guardian\u2019s name.';
+      return;
+    }
+    if (!isNonEmpty(phone)) {
+      document.getElementById('guardian-phone-error').textContent = 'Enter a phone number.';
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('guardian-email-error').textContent = 'Enter a valid email, or leave it blank.';
+      return;
+    }
+
+    pendingGuardianData = { fullName, phone, email, relationship };
+
+    // Duplicate-phone check, scoped to this business, before creating anything.
+    const { data: existingParents, error: dupError } = await supabase
+      .from('parents')
+      .select('id, full_name, phone')
+      .eq('business_id', businessId)
+      .eq('phone', phone)
+      .limit(1);
+
+    if (dupError) {
+      showToast(friendlyError(dupError), 'danger');
+      return;
+    }
+
+    if (existingParents && existingParents.length > 0) {
+      const existing = existingParents[0];
+      pendingGuardianData.existingParentId = existing.id;
+      document.getElementById('guardian-duplicate-text').textContent =
+        `A parent named "${existing.full_name}" already has this phone number. Link this parent to ${student.full_name} instead of creating a new record?`;
+      addGuardianForm.hidden = true;
+      duplicateNotice.hidden = false;
+      return;
+    }
+
+    await createNewGuardianAndLink();
+  });
+
+  document.getElementById('guardian-link-existing-btn').addEventListener('click', async () => {
+    if (!pendingGuardianData || !pendingGuardianData.existingParentId) return;
+    await linkExistingParent(pendingGuardianData.existingParentId, pendingGuardianData.relationship);
+  });
+
+  document.getElementById('guardian-create-new-btn').addEventListener('click', async () => {
+    duplicateNotice.hidden = true;
+    addGuardianForm.hidden = false;
+    await createNewGuardianAndLink();
+  });
+
+  document.getElementById('guardian-duplicate-cancel-btn').addEventListener('click', closeGuardianForm);
+
+  async function createNewGuardianAndLink() {
+    const { fullName, phone, email, relationship } = pendingGuardianData;
+    const saveBtn = document.getElementById('guardian-save-btn');
+
+    await withLoading(saveBtn, 'Saving...', async () => {
+      const { data: newParent, error: parentError } = await supabase
+        .from('parents')
+        .insert({
+          business_id: businessId,
+          full_name: fullName,
+          phone,
+          email: email || null,
+        })
+        .select('id, full_name, phone, email')
+        .single();
+
+      if (parentError) {
+        showToast(friendlyError(parentError), 'danger');
+        return;
+      }
+
+      await linkExistingParent(newParent.id, relationship, newParent);
+    });
+  }
+
+  async function linkExistingParent(parentId, relationship, parentRecordForFallback) {
+    const isPrimary = !guardians.some((g) => g.is_primary);
+
+    const { data: linkData, error: linkError } = await supabase
+      .from('student_parents')
+      .insert({
+        student_id: studentId,
+        parent_id: parentId,
+        relationship: relationship || null,
+        is_primary: isPrimary,
+      })
+      .select('id, relationship, is_primary, parents(id, full_name, phone, email)')
+      .single();
+
+    if (linkError) {
+      if (linkError.code === '23505') {
+        showToast('This parent is already linked to this student.', 'danger');
+      } else {
+        showToast(friendlyError(linkError), 'danger');
+      }
+      return;
+    }
+
+    guardians.push(linkData);
+    renderGuardians();
+    closeGuardianForm();
+    const name = (linkData.parents && linkData.parents.full_name) || (parentRecordForFallback && parentRecordForFallback.full_name) || 'Guardian';
+    showToast(`${name} linked to ${student.full_name}.`, 'info');
+  }
+
+  // ============ SUBJECTS & TUTORS ============
+  function renderSubjects() {
+    const listEl = document.getElementById('subjects-list');
+    const emptyEl = document.getElementById('subjects-empty');
+    listEl.innerHTML = '';
+
+    if (subjectLinks.length === 0) {
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+
+    subjectLinks.forEach((link) => {
+      if (!link.subjects) return; // subject record missing/inaccessible, skip defensively
+      const subjectId = link.subjects.id;
+      const assignment = assignments.find((a) => a.subject_id === subjectId);
+
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <div class="list-item-main">
+          <div class="list-item-title"></div>
+          <div class="list-item-sub"></div>
+        </div>
+        <div class="list-item-actions">
+          <button type="button" class="btn-inline" data-action="assign"></button>
+        </div>
+      `;
+      item.querySelector('.list-item-title').textContent = link.subjects.name;
+      item.querySelector('.list-item-sub').textContent = assignment
+        ? `Tutor: ${assignment.tutors ? assignment.tutors.full_name : '(tutor record missing)'}`
+        : 'Unassigned';
+
+      const assignBtn = item.querySelector('[data-action="assign"]');
+      assignBtn.textContent = assignment ? 'Change' : 'Assign';
+      assignBtn.addEventListener('click', () => openAssignPicker(item, subjectId, assignment));
+
+      listEl.appendChild(item);
+    });
+  }
+
+  function openAssignPicker(itemEl, subjectId, currentAssignment) {
+    // Replace this row's actions with an inline tutor picker.
+    if (itemEl.querySelector('.select-inline')) return; // already open
+
+    const picker = document.createElement('div');
+    picker.style.marginTop = '8px';
+    picker.innerHTML = `
+      <select class="select-inline">
+        <option value="">Select a tutor...</option>
+      </select>
+      <div class="form-actions" style="margin-top:0; margin-bottom: var(--spacing-2);">
+        <button type="button" class="btn-primary" data-action="confirm-assign">Save</button>
+        <button type="button" class="btn-secondary" data-action="cancel-assign">Cancel</button>
+      </div>
+    `;
+    const select = picker.querySelector('select');
+    allActiveTutors.forEach((t) => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.full_name;
+      if (currentAssignment && currentAssignment.tutors && currentAssignment.tutors.id === t.id) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+
+    picker.querySelector('[data-action="cancel-assign"]').addEventListener('click', () => {
+      picker.remove();
+    });
+
+    picker.querySelector('[data-action="confirm-assign"]').addEventListener('click', async (e) => {
+      const tutorId = select.value;
+      if (!tutorId) {
+        showToast('Select a tutor first.', 'danger');
+        return;
+      }
+      await assignTutor(subjectId, tutorId, currentAssignment, e.currentTarget);
+    });
+
+    itemEl.appendChild(picker);
+  }
+
+  async function assignTutor(subjectId, tutorId, currentAssignment, btnEl) {
+    await withLoading(btnEl, 'Saving...', async () => {
+      // Mid-term reassignment: close out the current active row (if any),
+      // then open a fresh active row for the new tutor. Both rows persist —
+      // this is exactly the tutor_students history model from the schema.
+      if (currentAssignment) {
+        const { error: closeError } = await supabase
+          .from('tutor_students')
+          .update({ status: 'inactive', ended_at: new Date().toISOString() })
+          .eq('id', currentAssignment.id);
+
+        if (closeError) {
+          showToast(friendlyError(closeError), 'danger');
+          return;
+        }
+        assignments = assignments.filter((a) => a.id !== currentAssignment.id);
+      }
+
+      const { data: newAssignment, error: assignError } = await supabase
+        .from('tutor_students')
+        .insert({
+          tutor_id: tutorId,
+          student_id: studentId,
+          subject_id: subjectId,
+          status: 'active',
+        })
+        .select('id, subject_id, status, tutors(id, full_name)')
+        .single();
+
+      if (assignError) {
+        showToast(friendlyError(assignError), 'danger');
+        return;
+      }
+
+      assignments.push(newAssignment);
+      renderSubjects();
+      showToast(`Assigned ${newAssignment.tutors.full_name}.`, 'info');
+    });
+  }
+
+  const addSubjectBtn = document.getElementById('add-subject-btn');
+  const subjectPicker = document.getElementById('add-subject-picker');
+  const subjectPickerSelect = document.getElementById('subject-picker-select');
+
+  addSubjectBtn.addEventListener('click', () => {
+    const linkedIds = new Set(subjectLinks.filter((l) => l.subjects).map((l) => l.subjects.id));
+    const available = allActiveSubjects.filter((s) => !linkedIds.has(s.id));
+
+    if (available.length === 0) {
+      showToast('All active subjects are already added, or none exist yet — add one from the Subjects screen.', 'info');
+      return;
+    }
+
+    subjectPickerSelect.innerHTML = '<option value="">Select a subject...</option>';
+    available.forEach((s) => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      subjectPickerSelect.appendChild(opt);
+    });
+
+    subjectPicker.hidden = false;
+    addSubjectBtn.hidden = true;
+  });
+
+  document.getElementById('subject-picker-cancel-btn').addEventListener('click', () => {
+    subjectPicker.hidden = true;
+    addSubjectBtn.hidden = false;
+  });
+
+  document.getElementById('subject-picker-confirm-btn').addEventListener('click', async (e) => {
+    const subjectId = subjectPickerSelect.value;
+    if (!subjectId) {
+      showToast('Select a subject first.', 'danger');
+      return;
+    }
+
+    await withLoading(e.currentTarget, 'Adding...', async () => {
+      const { data, error } = await supabase
+        .from('student_subjects')
+        .insert({ student_id: studentId, subject_id: subjectId })
+        .select('id, subjects(id, name, active)')
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          showToast('This subject is already added for this student.', 'danger');
+        } else {
+          showToast(friendlyError(error), 'danger');
+        }
+        return;
+      }
+
+      subjectLinks.push(data);
+      renderSubjects();
+      subjectPicker.hidden = true;
+      addSubjectBtn.hidden = false;
+      showToast(`${data.subjects.name} added.`, 'info');
+    });
+  });
+</script>
+</body>
+</html>

@@ -248,6 +248,10 @@
       item.querySelector('.list-item-title').textContent = student.full_name;
       item.querySelector('.list-item-sub').textContent = sub || 'No school on file';
       item.querySelector('.status-badge').textContent = student.status;
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        window.location.href = `./student.html?id=${student.id}`;
+      });
 
       listGroupEl.appendChild(item);
     });

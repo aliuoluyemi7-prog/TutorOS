@@ -480,3 +480,75 @@ button {
   0% { background-position: 100% 50%; }
   100% { background-position: 0 50%; }
 }
+
+/* student.html — profile hub */
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--spacing-4);
+  margin-bottom: var(--spacing-2);
+}
+
+.section-row h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.notice-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius);
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-3);
+  font-size: 0.9rem;
+}
+
+.notice-box .form-actions {
+  margin-top: var(--spacing-2);
+}
+
+select.select-inline {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background: var(--color-surface);
+  margin-bottom: var(--spacing-2);
+}
+
+.primary-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-left: 6px;
+}
+
+.tab-strip {
+  display: flex;
+  gap: var(--spacing-2);
+  overflow-x: auto;
+  margin: var(--spacing-4) 0 var(--spacing-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 10px 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.tab-btn:disabled {
+  opacity: 0.5;
+}
