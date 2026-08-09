@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Log in — Tutor OS</title>
-<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="./app.css" />
 </head>
 <body>
 <div class="center-screen">
@@ -26,7 +26,7 @@
       <button type="button" class="btn-link" id="forgot-link">Forgot password?</button>
     </div>
     <div class="link-row">
-      Don't have an account? <a href="signup.html">Sign up</a>
+      Don't have an account? <a href="./signup.html">Sign up</a>
     </div>
   </form>
 </div>
@@ -41,7 +41,7 @@
   const submitBtn = document.getElementById('submit-btn');
 
   document.getElementById('forgot-link').addEventListener('click', () => {
-    window.location.href = 'reset-password.html';
+    window.location.href = './reset-password.html';
   });
 
   form.addEventListener('submit', async (e) => {
@@ -73,11 +73,11 @@
       try {
         const result = await resolveWorkspace();
         if (result.action === 'onboarding') {
-          window.location.href = 'business-setup.html';
+          window.location.href = './business-setup.html';
         } else if (result.action === 'choose-workspace') {
-          window.location.href = 'choose-workspace.html';
+          window.location.href = './choose-workspace.html';
         } else {
-          window.location.href = 'dashboard.html';
+          window.location.href = './dashboard.html';
         }
       } catch (workspaceError) {
         showToast(friendlyError(workspaceError), 'danger');

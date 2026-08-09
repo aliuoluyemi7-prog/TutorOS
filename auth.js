@@ -14,11 +14,7 @@ export async function signUp({ fullName, email, password }) {
     password,
     options: {
       data: { full_name: fullName },
-      // Resolved relative to the current page's URL (not just the domain),
-      // so this works correctly whether the app is deployed at the site
-      // root or in a subfolder like /TutorOs/ — window.location.origin
-      // alone would drop that subfolder and send people to the wrong path.
-      emailRedirectTo: new URL('verify-email.html', window.location.href).href,
+      emailRedirectTo: `${window.location.origin}/verify-email.html`,
     },
   });
 }
@@ -53,9 +49,7 @@ export async function getSession() {
  */
 export async function requestPasswordReset(email) {
   return await supabase.auth.resetPasswordForEmail(email, {
-    // Same reasoning as emailRedirectTo above — resolve relative to the
-    // current page so this works from any deployment path.
-    redirectTo: new URL('reset-password.html', window.location.href).href,
+    redirectTo: `${window.location.origin}/reset-password.html`,
   });
 }
 

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sign up — Tutor OS</title>
-<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="./app.css" />
 </head>
 <body>
 <div class="center-screen">
@@ -27,7 +27,7 @@
     <button type="submit" class="btn-primary" id="submit-btn">Sign up</button>
 
     <div class="link-row">
-      Already have an account? <a href="login.html">Log in</a>
+      Already have an account? <a href="./login.html">Log in</a>
     </div>
   </form>
 </div>
@@ -71,7 +71,7 @@
         showToast(friendlyError(error), 'danger');
         return;
       }
-      window.location.href = 'verify-email.html';
+      window.location.href = './verify-email.html';
     });
   });
 </script>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Choose a workspace — Tutor OS</title>
-<link rel="stylesheet" href="app.css" />
+<link rel="stylesheet" href="./app.css" />
 </head>
 <body>
 <div class="center-screen">
@@ -33,9 +33,9 @@
     // If resolution no longer needs a choice (e.g. down to one business,
     // or already has a valid stored selection), don't show this screen.
     if (result.action === 'onboarding') {
-      window.location.replace('business-setup.html');
+      window.location.replace('./business-setup.html');
     } else if (result.action === 'enter') {
-      window.location.replace('dashboard.html');
+      window.location.replace('./dashboard.html');
     } else {
       result.memberships.forEach((m) => {
         const btn = document.createElement('button');
@@ -47,7 +47,7 @@
         `;
         btn.addEventListener('click', () => {
           setCurrentBusinessId(m.business_id);
-          window.location.href = 'dashboard.html';
+          window.location.href = './dashboard.html';
         });
         list.appendChild(btn);
       });
