@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tutors — Tutor OS</title>
+<link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+<div class="page">
+  <header class="app-header">
+    <div>
+      <div class="business-name" id="business-name">Loading...</div>
+      <div class="role-badge" id="role-badge"></div>
+    </div>
+    <button class="logout-btn" id="logout-btn">Log out</button>
+  </header>
+
+  <main class="app-main">
+    <button class="back-link" id="back-link">&larr; Dashboard</button>
+
+    <div class="page-title-row">
+      <h1>Tutors</h1>
+    </div>
+
+    <!-- Inline quick-create form, hidden until "+ Add Tutor" is tapped -->
+    <form class="card inline-form-card" id="create-form" novalidate hidden>
+      <label for="full-name">Full name</label>
+      <input type="text" id="full-name" required autocomplete="off" />
+      <div class="field-error" id="full-name-error"></div>
+
+      <label for="email">Email (optional)</label>
+      <input type="email" id="email" autocomplete="off" />
+      <div class="field-error" id="email-error"></div>
+
+      <label for="phone">Phone (optional)</label>
+      <input type="tel" id="phone" autocomplete="off" />
+
+      <label for="hourly-rate">Hourly rate (optional)</label>
+      <input type="number" id="hourly-rate" min="0" step="0.01" inputmode="decimal" />
+      <div class="field-error" id="hourly-rate-error"></div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="create-submit-btn">Add tutor</button>
+        <button type="button" class="btn-secondary" id="create-cancel-btn">Cancel</button>
+      </div>
+    </form>
+
+    <div class="search-bar">
+      <input type="search" id="search-input" placeholder="Search tutors by name..." />
+    </div>
+
+    <div id="list-loading">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+
+    <div class="empty-state" id="empty-state" hidden></div>
+
+    <div class="list-group" id="list-group" hidden></div>
+  </main>
+
+  <button class="fab-add" id="fab-add" title="Add tutor" aria-label="Add tutor">+</button>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { requireAuth } from './router-guard.js';
+  import { signOut } from './auth.js';
+  import { resolveWorkspace } from './workspace.js';
+  import { getBusiness, getMyRoleInBusiness } from './business.js';
+  import { showToast, withLoading, isNonEmpty, friendlyError } from './ui-helpers.js';
+  import { supabase } from './supabase-client.js';
+
+  await requireAuth();
+
+  // Same resolution pattern as dashboard.html / students.html — re-resolve
+  // on direct load to cover refresh/deep-link cases and revoked-membership
+  // mid-session.
+  let businessId;
+  try {
+    const result = await resolveWorkspace();
+    if (result.action === 'onboarding') {
+      window.location.replace('./business-setup.html');
+      throw new Error('redirecting');
+    }
+    if (result.action === 'choose-workspace') {
+      window.location.replace('./choose-workspace.html');
+      throw new Error('redirecting');
+    }
+    businessId = result.businessId;
+  } catch (e) {
+    if (e.message !== 'redirecting') showToast(friendlyError(e), 'danger');
+    throw e;
+  }
+
+  const [{ business, error: bizError }, role] = await Promise.all([
+    getBusiness(businessId),
+    getMyRoleInBusiness(businessId),
+  ]);
+
+  if (bizError || !business) {
+    showToast('Could not load your business.', 'danger');
+  } else {
+    document.getElementById('business-name').textContent = business.name;
+  }
+  document.getElementById('role-badge').textContent = role || '';
+
+  document.getElementById('back-link').addEventListener('click', () => {
+    window.location.href = './dashboard.html';
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut();
+    window.location.href = './login.html';
+  });
+
+  // ---------- state ----------
+  let allTutors = [];
+  let searchTerm = '';
+
+  const listGroupEl = document.getElementById('list-group');
+  const emptyStateEl = document.getElementById('empty-state');
+  const loadingEl = document.getElementById('list-loading');
+
+  await loadTutors();
+
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    searchTerm = e.target.value.trim().toLowerCase();
+    renderList();
+  });
+
+  // ---------- quick-create form open/close ----------
+  const createForm = document.getElementById('create-form');
+  const fabAdd = document.getElementById('fab-add');
+
+  fabAdd.addEventListener('click', () => {
+    createForm.hidden = false;
+    fabAdd.hidden = true;
+    document.getElementById('full-name').focus();
+  });
+
+  document.getElementById('create-cancel-btn').addEventListener('click', () => {
+    closeCreateForm();
+  });
+
+  function closeCreateForm() {
+    createForm.hidden = true;
+    fabAdd.hidden = false;
+    createForm.reset();
+    document.getElementById('full-name-error').textContent = '';
+    document.getElementById('email-error').textContent = '';
+    document.getElementById('hourly-rate-error').textContent = '';
+  }
+
+  createForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('full-name-error').textContent = '';
+    document.getElementById('email-error').textContent = '';
+    document.getElementById('hourly-rate-error').textContent = '';
+
+    const fullName = document.getElementById('full-name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const hourlyRateRaw = document.getElementById('hourly-rate').value.trim();
+
+    if (!isNonEmpty(fullName)) {
+      document.getElementById('full-name-error').textContent = 'Enter the tutor\u2019s name.';
+      return;
+    }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('email-error').textContent = 'Enter a valid email, or leave it blank.';
+      return;
+    }
+
+    let hourlyRate = null;
+    if (hourlyRateRaw) {
+      hourlyRate = Number(hourlyRateRaw);
+      if (Number.isNaN(hourlyRate) || hourlyRate < 0) {
+        document.getElementById('hourly-rate-error').textContent = 'Enter a valid rate, or leave it blank.';
+        return;
+      }
+    }
+
+    const submitBtn = document.getElementById('create-submit-btn');
+    await withLoading(submitBtn, 'Adding...', async () => {
+      const { data, error } = await supabase
+        .from('tutors')
+        .insert({
+          business_id: businessId,
+          full_name: fullName,
+          email: email || null,
+          phone: phone || null,
+          hourly_rate: hourlyRate,
+        })
+        .select('id, full_name, email, phone, hourly_rate, status, created_at')
+        .single();
+
+      if (error) {
+        showToast(friendlyError(error), 'danger');
+        return;
+      }
+
+      allTutors.unshift(data);
+      renderList();
+      closeCreateForm();
+      showToast(`${data.full_name} added.`, 'info');
+    });
+  });
+
+  // ---------- data + render ----------
+  async function loadTutors() {
+    loadingEl.hidden = false;
+    listGroupEl.hidden = true;
+    emptyStateEl.hidden = true;
+
+    const { data, error } = await supabase
+      .from('tutors')
+      .select('id, full_name, email, phone, hourly_rate, status, created_at')
+      .eq('business_id', businessId)
+      .order('full_name', { ascending: true });
+
+    loadingEl.hidden = true;
+
+    if (error) {
+      showToast(friendlyError(error), 'danger');
+      emptyStateEl.hidden = false;
+      emptyStateEl.textContent = 'Could not load tutors. Pull down to refresh, or try again.';
+      return;
+    }
+
+    allTutors = data || [];
+    renderList();
+  }
+
+  function renderList() {
+    const filtered = searchTerm
+      ? allTutors.filter((t) => t.full_name.toLowerCase().includes(searchTerm))
+      : allTutors;
+
+    if (allTutors.length === 0) {
+      listGroupEl.hidden = true;
+      emptyStateEl.hidden = false;
+      emptyStateEl.textContent = 'No tutors yet. Tap the + button to add your first tutor.';
+      return;
+    }
+
+    if (filtered.length === 0) {
+      listGroupEl.hidden = true;
+      emptyStateEl.hidden = false;
+      emptyStateEl.textContent = `No tutors match "${searchTerm}".`;
+      return;
+    }
+
+    emptyStateEl.hidden = true;
+    listGroupEl.hidden = false;
+    listGroupEl.innerHTML = '';
+
+    filtered.forEach((tutor) => {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+
+      const rateText = tutor.hourly_rate != null ? `\u20a6${Number(tutor.hourly_rate).toLocaleString()}/hr` : null;
+      const sub = [tutor.phone, rateText].filter(Boolean).join(' \u00b7 ');
+
+      item.innerHTML = `
+        <div class="list-item-main">
+          <div class="list-item-title"></div>
+          <div class="list-item-sub"></div>
+        </div>
+        <span class="status-badge status-badge--${tutor.status}"></span>
+      `;
+      item.querySelector('.list-item-title').textContent = tutor.full_name;
+      item.querySelector('.list-item-sub').textContent = sub || 'No contact details on file';
+      item.querySelector('.status-badge').textContent = tutor.status;
+
+      listGroupEl.appendChild(item);
+    });
+  }
+</script>
+</body>
+</html>
