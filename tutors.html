@@ -5,11 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Tutors — Tutor OS</title>
 <link rel="stylesheet" href="./app.css" />
-<!-- TEMPORARY DEBUG TOOL — mobile on-screen console. Remove once the
-     click issue is diagnosed. Tap the small floating circle it adds in
-     the corner to open a console panel showing real errors. -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
 </head>
 <body>
 <div class="page">
@@ -77,16 +72,6 @@
   import { getBusiness, getMyRoleInBusiness } from './business.js';
   import { showToast, withLoading, isNonEmpty, friendlyError } from './ui-helpers.js';
   import { supabase } from './supabase-client.js';
-
-  // TEMPORARY DEBUG INSTRUMENTATION — surfaces any silent JS error as a
-  // visible toast, since console access isn't easy on mobile. Remove once
-  // the FAB issue is confirmed fixed.
-  window.addEventListener('error', (e) => {
-    showToast('JS error: ' + e.message, 'danger');
-  });
-  window.addEventListener('unhandledrejection', (e) => {
-    showToast('Unhandled promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), 'danger');
-  });
 
   await requireAuth();
 
