@@ -23,7 +23,7 @@
         <div class="stat-label">Today's sessions</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value">0</div>
+        <div class="stat-value" id="stat-total-students">0</div>
         <div class="stat-label">Total students</div>
       </div>
       <div class="stat-card">
@@ -54,6 +54,7 @@
   import { resolveWorkspace, getCurrentBusinessId } from './workspace.js';
   import { getBusiness, getMyRoleInBusiness } from './business.js';
   import { showToast, friendlyError } from './ui-helpers.js';
+  import { supabase } from './supabase-client.js';
 
   await requireAuth();
 
@@ -89,7 +90,22 @@
   }
   document.getElementById('role-badge').textContent = role || '';
 
-  renderEmptyState(role);
+  let totalStudents = 0;
+  if (role === 'owner' || role === 'administrator') {
+    const { count, error: countError } = await supabase
+      .from('students')
+      .select('id', { count: 'exact', head: true })
+      .eq('business_id', businessId);
+
+    if (countError) {
+      showToast(friendlyError(countError), 'danger');
+    } else {
+      totalStudents = count || 0;
+    }
+  }
+  document.getElementById('stat-total-students').textContent = totalStudents;
+
+  renderEmptyState(role, totalStudents);
   renderQuickActions(role);
 
   document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -97,8 +113,15 @@
     window.location.href = './login.html';
   });
 
-  function renderEmptyState(role) {
+  function renderEmptyState(role, totalStudents) {
     const el = document.getElementById('empty-state');
+
+    if (totalStudents > 0) {
+      el.hidden = true;
+      return;
+    }
+
+    el.hidden = false;
     const messages = {
       owner: 'No students yet. Add your first tutor and student to get started.',
       administrator: 'No students yet. Add your first tutor and student to get started.',
