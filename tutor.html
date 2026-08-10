@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tutor — Tutor OS</title>
+<link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+<div class="page">
+  <header class="app-header">
+    <div>
+      <div class="business-name" id="business-name">Loading...</div>
+      <div class="role-badge" id="role-badge"></div>
+    </div>
+    <button class="logout-btn" id="logout-btn">Log out</button>
+  </header>
+
+  <main class="app-main">
+    <button class="back-link" id="back-link">&larr; Tutors</button>
+
+    <div id="not-found-state" class="empty-state" hidden>
+      Tutor not found, or you don\u2019t have access to it.
+    </div>
+
+    <div id="page-loading">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+
+    <div id="page-content" hidden>
+
+      <!-- ============ PROFILE HEADER ============ -->
+      <div class="card" id="profile-view">
+        <div class="page-title-row">
+          <h1 id="tutor-name">&nbsp;</h1>
+          <span class="status-badge" id="tutor-status-badge"></span>
+        </div>
+        <div class="list-item-sub" id="tutor-meta"></div>
+        <div class="form-actions" style="margin-top: var(--spacing-3);">
+          <button type="button" class="btn-inline" id="edit-profile-btn">Edit profile</button>
+        </div>
+      </div>
+
+      <form class="card inline-form-card" id="edit-profile-form" novalidate hidden>
+        <label for="edit-full-name">Full name</label>
+        <input type="text" id="edit-full-name" required autocomplete="off" />
+        <div class="field-error" id="edit-full-name-error"></div>
+
+        <label for="edit-email">Email</label>
+        <input type="email" id="edit-email" autocomplete="off" />
+        <div class="field-error" id="edit-email-error"></div>
+
+        <label for="edit-phone">Phone</label>
+        <input type="tel" id="edit-phone" autocomplete="off" />
+
+        <label for="edit-hourly-rate">Hourly rate</label>
+        <input type="number" id="edit-hourly-rate" min="0" step="0.01" inputmode="decimal" />
+        <div class="field-error" id="edit-hourly-rate-error"></div>
+
+        <label for="edit-qualifications">Qualifications</label>
+        <input type="text" id="edit-qualifications" autocomplete="off" />
+
+        <label for="edit-status">Status</label>
+        <select id="edit-status" class="select-inline">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary" id="edit-profile-save-btn">Save changes</button>
+          <button type="button" class="btn-secondary" id="edit-profile-cancel-btn">Cancel</button>
+        </div>
+      </form>
+
+      <!-- ============ COUNTS ============ -->
+      <div class="dashboard-grid" style="margin-top: var(--spacing-4);">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-subjects-count">0</div>
+          <div class="stat-label">Subjects taught</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-active-students-count">0</div>
+          <div class="stat-label">Active students</div>
+        </div>
+      </div>
+
+      <!-- ============ SUBJECTS TAUGHT ============ -->
+      <div class="section-row">
+        <h2>Subjects taught</h2>
+        <button type="button" class="btn-inline" id="add-taught-subject-btn">+ Add subject</button>
+      </div>
+
+      <div id="add-taught-subject-picker" hidden>
+        <select id="taught-subject-select" class="select-inline"></select>
+        <div class="form-actions" style="margin-top: 0; margin-bottom: var(--spacing-3);">
+          <button type="button" class="btn-primary" id="taught-subject-confirm-btn">Add</button>
+          <button type="button" class="btn-secondary" id="taught-subject-cancel-btn">Cancel</button>
+        </div>
+      </div>
+
+      <div class="empty-state" id="taught-subjects-empty" hidden>No subjects added yet.</div>
+      <div class="list-group" id="taught-subjects-list"></div>
+
+      <!-- ============ ASSIGNED STUDENTS ============ -->
+      <div class="section-row">
+        <h2>Assigned students</h2>
+      </div>
+
+      <div class="empty-state" id="assignments-empty" hidden>No active student assignments.</div>
+      <div class="list-group" id="assignments-list"></div>
+
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+
+<script type="module">
+  import { requireAuth } from './router-guard.js';
+  import { signOut } from './auth.js';
+  import { resolveWorkspace } from './workspace.js';
+  import { getBusiness, getMyRoleInBusiness } from './business.js';
+  import { showToast, withLoading, isNonEmpty, friendlyError } from './ui-helpers.js';
+  import { supabase } from './supabase-client.js';
+
+  await requireAuth();
+
+  const params = new URLSearchParams(window.location.search);
+  const tutorId = params.get('id');
+
+  if (!tutorId) {
+    window.location.replace('./tutors.html');
+    throw new Error('redirecting');
+  }
+
+  let businessId;
+  try {
+    const result = await resolveWorkspace();
+    if (result.action === 'onboarding') {
+      window.location.replace('./business-setup.html');
+      throw new Error('redirecting');
+    }
+    if (result.action === 'choose-workspace') {
+      window.location.replace('./choose-workspace.html');
+      throw new Error('redirecting');
+    }
+    businessId = result.businessId;
+  } catch (e) {
+    if (e.message !== 'redirecting') showToast(friendlyError(e), 'danger');
+    throw e;
+  }
+
+  const [{ business, error: bizError }, role] = await Promise.all([
+    getBusiness(businessId),
+    getMyRoleInBusiness(businessId),
+  ]);
+
+  if (bizError || !business) {
+    showToast('Could not load your business.', 'danger');
+  } else {
+    document.getElementById('business-name').textContent = business.name;
+  }
+  document.getElementById('role-badge').textContent = role || '';
+
+  document.getElementById('back-link').addEventListener('click', () => {
+    window.location.href = './tutors.html';
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut();
+    window.location.href = './login.html';
+  });
+
+  // ---------- state ----------
+  let tutor = null;
+  let taughtSubjects = [];   // tutor_subjects rows joined with subjects
+  let assignments = [];      // active tutor_students rows joined with students + subjects
+  let allActiveSubjects = []; // business's active subjects, for the add-subject picker
+
+  const pageLoadingEl = document.getElementById('page-loading');
+  const pageContentEl = document.getElementById('page-content');
+  const notFoundEl = document.getElementById('not-found-state');
+
+  await loadEverything();
+
+  async function loadEverything() {
+    pageLoadingEl.hidden = false;
+    pageContentEl.hidden = true;
+    notFoundEl.hidden = true;
+
+    const { data: tutorData, error: tutorError } = await supabase
+      .from('tutors')
+      .select('id, full_name, email, phone, qualifications, experience_years, hourly_rate, status, created_at')
+      .eq('id', tutorId)
+      .eq('business_id', businessId)
+      .maybeSingle();
+
+    if (tutorError) {
+      showToast(friendlyError(tutorError), 'danger');
+      pageLoadingEl.hidden = true;
+      notFoundEl.hidden = false;
+      return;
+    }
+
+    if (!tutorData) {
+      pageLoadingEl.hidden = true;
+      notFoundEl.hidden = false;
+      return;
+    }
+
+    tutor = tutorData;
+
+    const [taughtRes, assignmentsRes, activeSubjectsRes] = await Promise.all([
+      supabase
+        .from('tutor_subjects')
+        .select('id, subjects(id, name, active)')
+        .eq('tutor_id', tutorId),
+      supabase
+        .from('tutor_students')
+        .select('id, status, assigned_at, students(id, full_name), subjects(id, name)')
+        .eq('tutor_id', tutorId)
+        .eq('status', 'active'),
+      supabase
+        .from('subjects')
+        .select('id, name')
+        .eq('business_id', businessId)
+        .eq('active', true)
+        .order('name', { ascending: true }),
+    ]);
+
+    if (taughtRes.error) showToast(friendlyError(taughtRes.error), 'danger');
+    if (assignmentsRes.error) showToast(friendlyError(assignmentsRes.error), 'danger');
+
+    taughtSubjects = taughtRes.data || [];
+    assignments = assignmentsRes.data || [];
+    allActiveSubjects = activeSubjectsRes.data || [];
+
+    pageLoadingEl.hidden = true;
+    pageContentEl.hidden = false;
+
+    renderProfile();
+    renderTaughtSubjects();
+    renderAssignments();
+  }
+
+  // ============ PROFILE ============
+  function renderProfile() {
+    document.getElementById('tutor-name').textContent = tutor.full_name;
+    const badge = document.getElementById('tutor-status-badge');
+    badge.className = `status-badge status-badge--${tutor.status}`;
+    badge.textContent = tutor.status;
+
+    const rateText = tutor.hourly_rate != null ? `\u20a6${Number(tutor.hourly_rate).toLocaleString()}/hr` : null;
+    const metaParts = [tutor.phone, tutor.email, rateText].filter(Boolean);
+    document.getElementById('tutor-meta').textContent =
+      metaParts.length > 0 ? metaParts.join(' \u00b7 ') : 'No contact details on file';
+  }
+
+  document.getElementById('edit-profile-btn').addEventListener('click', () => {
+    document.getElementById('edit-full-name').value = tutor.full_name || '';
+    document.getElementById('edit-email').value = tutor.email || '';
+    document.getElementById('edit-phone').value = tutor.phone || '';
+    document.getElementById('edit-hourly-rate').value = tutor.hourly_rate != null ? tutor.hourly_rate : '';
+    document.getElementById('edit-qualifications').value = tutor.qualifications || '';
+    document.getElementById('edit-status').value = tutor.status;
+
+    document.getElementById('profile-view').hidden = true;
+    document.getElementById('edit-profile-form').hidden = false;
+  });
+
+  document.getElementById('edit-profile-cancel-btn').addEventListener('click', () => {
+    document.getElementById('edit-profile-form').hidden = true;
+    document.getElementById('profile-view').hidden = false;
+  });
+
+  document.getElementById('edit-profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    document.getElementById('edit-full-name-error').textContent = '';
+    document.getElementById('edit-email-error').textContent = '';
+    document.getElementById('edit-hourly-rate-error').textContent = '';
+
+    const fullName = document.getElementById('edit-full-name').value.trim();
+    const email = document.getElementById('edit-email').value.trim();
+    const hourlyRateRaw = document.getElementById('edit-hourly-rate').value.trim();
+
+    if (!isNonEmpty(fullName)) {
+      document.getElementById('edit-full-name-error').textContent = 'Full name can\u2019t be empty.';
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('edit-email-error').textContent = 'Enter a valid email, or leave it blank.';
+      return;
+    }
+    let hourlyRate = null;
+    if (hourlyRateRaw) {
+      hourlyRate = Number(hourlyRateRaw);
+      if (Number.isNaN(hourlyRate) || hourlyRate < 0) {
+        document.getElementById('edit-hourly-rate-error').textContent = 'Enter a valid rate, or leave it blank.';
+        return;
+      }
+    }
+
+    const updates = {
+      full_name: fullName,
+      email: email || null,
+      phone: document.getElementById('edit-phone').value.trim() || null,
+      hourly_rate: hourlyRate,
+      qualifications: document.getElementById('edit-qualifications').value.trim() || null,
+      status: document.getElementById('edit-status').value,
+    };
+
+    const saveBtn = document.getElementById('edit-profile-save-btn');
+    await withLoading(saveBtn, 'Saving...', async () => {
+      const { data, error } = await supabase
+        .from('tutors')
+        .update(updates)
+        .eq('id', tutorId)
+        .select('id, full_name, email, phone, qualifications, experience_years, hourly_rate, status, created_at')
+        .single();
+
+      if (error) {
+        showToast(friendlyError(error), 'danger');
+        return;
+      }
+
+      tutor = data;
+      renderProfile();
+      document.getElementById('edit-profile-form').hidden = true;
+      document.getElementById('profile-view').hidden = false;
+      showToast('Profile updated.', 'info');
+    });
+  });
+
+  // ============ SUBJECTS TAUGHT ============
+  function renderTaughtSubjects() {
+    document.getElementById('stat-subjects-count').textContent = taughtSubjects.length;
+
+    const listEl = document.getElementById('taught-subjects-list');
+    const emptyEl = document.getElementById('taught-subjects-empty');
+    listEl.innerHTML = '';
+
+    if (taughtSubjects.length === 0) {
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+
+    taughtSubjects.forEach((link) => {
+      if (!link.subjects) return;
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <div class="list-item-main">
+          <div class="list-item-title"></div>
+        </div>
+        <div class="list-item-actions">
+          <button type="button" class="btn-inline btn-inline--danger" data-action="remove">Remove</button>
+        </div>
+      `;
+      item.querySelector('.list-item-title').textContent = link.subjects.name;
+      item.querySelector('[data-action="remove"]').addEventListener('click', (e) => {
+        removeTaughtSubject(link.id, e.currentTarget);
+      });
+      listEl.appendChild(item);
+    });
+  }
+
+  async function removeTaughtSubject(linkId, btnEl) {
+    await withLoading(btnEl, 'Removing...', async () => {
+      const { error } = await supabase.from('tutor_subjects').delete().eq('id', linkId);
+      if (error) {
+        showToast(friendlyError(error), 'danger');
+        return;
+      }
+      taughtSubjects = taughtSubjects.filter((l) => l.id !== linkId);
+      renderTaughtSubjects();
+      showToast('Subject removed.', 'info');
+    });
+  }
+
+  const addTaughtSubjectBtn = document.getElementById('add-taught-subject-btn');
+  const taughtSubjectPicker = document.getElementById('add-taught-subject-picker');
+  const taughtSubjectSelect = document.getElementById('taught-subject-select');
+
+  addTaughtSubjectBtn.addEventListener('click', () => {
+    const linkedIds = new Set(taughtSubjects.filter((l) => l.subjects).map((l) => l.subjects.id));
+    const available = allActiveSubjects.filter((s) => !linkedIds.has(s.id));
+
+    if (available.length === 0) {
+      showToast('All active subjects are already added, or none exist yet — add one from the Subjects screen.', 'info');
+      return;
+    }
+
+    taughtSubjectSelect.innerHTML = '<option value="">Select a subject...</option>';
+    available.forEach((s) => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.name;
+      taughtSubjectSelect.appendChild(opt);
+    });
+
+    taughtSubjectPicker.hidden = false;
+    addTaughtSubjectBtn.hidden = true;
+  });
+
+  document.getElementById('taught-subject-cancel-btn').addEventListener('click', () => {
+    taughtSubjectPicker.hidden = true;
+    addTaughtSubjectBtn.hidden = false;
+  });
+
+  document.getElementById('taught-subject-confirm-btn').addEventListener('click', async (e) => {
+    const subjectId = taughtSubjectSelect.value;
+    if (!subjectId) {
+      showToast('Select a subject first.', 'danger');
+      return;
+    }
+
+    await withLoading(e.currentTarget, 'Adding...', async () => {
+      const { data, error } = await supabase
+        .from('tutor_subjects')
+        .insert({ tutor_id: tutorId, subject_id: subjectId })
+        .select('id, subjects(id, name, active)')
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          showToast('This subject is already added for this tutor.', 'danger');
+        } else {
+          showToast(friendlyError(error), 'danger');
+        }
+        return;
+      }
+
+      taughtSubjects.push(data);
+      renderTaughtSubjects();
+      taughtSubjectPicker.hidden = true;
+      addTaughtSubjectBtn.hidden = false;
+      showToast(`${data.subjects.name} added.`, 'info');
+    });
+  });
+
+  // ============ ASSIGNED STUDENTS ============
+  function renderAssignments() {
+    document.getElementById('stat-active-students-count').textContent = assignments.length;
+
+    const listEl = document.getElementById('assignments-list');
+    const emptyEl = document.getElementById('assignments-empty');
+    listEl.innerHTML = '';
+
+    if (assignments.length === 0) {
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+
+    assignments.forEach((a) => {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <div class="list-item-main">
+          <div class="list-item-title"></div>
+          <div class="list-item-sub"></div>
+        </div>
+        <div class="list-item-actions">
+          <button type="button" class="btn-inline btn-inline--danger" data-action="end">End</button>
+        </div>
+      `;
+      item.querySelector('.list-item-title').textContent = a.students ? a.students.full_name : '(student record missing)';
+      const subjectName = a.subjects ? a.subjects.name : '(subject missing)';
+      const since = a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : '';
+      item.querySelector('.list-item-sub').textContent = `${subjectName} \u00b7 since ${since}`;
+      item.querySelector('[data-action="end"]').addEventListener('click', (e) => {
+        endAssignment(a.id, e.currentTarget);
+      });
+      listEl.appendChild(item);
+    });
+  }
+
+  async function endAssignment(assignmentId, btnEl) {
+    await withLoading(btnEl, 'Ending...', async () => {
+      const { error } = await supabase
+        .from('tutor_students')
+        .update({ status: 'inactive', ended_at: new Date().toISOString() })
+        .eq('id', assignmentId);
+
+      if (error) {
+        showToast(friendlyError(error), 'danger');
+        return;
+      }
+
+      assignments = assignments.filter((a) => a.id !== assignmentId);
+      renderAssignments();
+      showToast('Assignment ended.', 'info');
+    });
+  }
+</script>
+</body>
+</html>

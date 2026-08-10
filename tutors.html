@@ -275,6 +275,10 @@
       item.querySelector('.list-item-title').textContent = tutor.full_name;
       item.querySelector('.list-item-sub').textContent = sub || 'No contact details on file';
       item.querySelector('.status-badge').textContent = tutor.status;
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        window.location.href = `./tutor.html?id=${tutor.id}`;
+      });
 
       listGroupEl.appendChild(item);
     });
